@@ -11,7 +11,7 @@ def wave_equation_fd(u, u_prev, c, dx, dt, nt):
         u_new = np.zeros_like(u)
         for i in range(1, u.shape[0] - 1):
             for j in range(1, u.shape[1] - 1):
-                u_new[i, j] = 2 * u[i, j] - u_prev[i, j] + c ** 2 * dt ** 2 / dx**2 * (
+                u_new[i, j] = 2 * u[i, j] - u_prev[i, j] + c ** 2 * dt ** 2 / dx ** 2 * (
                         u[i - 1, j] + u[i + 1, j] + u[i, j - 1] + u[i, j + 1] - 4 * u[i, j])
         u, u_prev = u_new, u
     return u, u_prev
@@ -21,6 +21,21 @@ def init_wave_randomly(shape):
     """Creates two random wave fields."""
     u = np.random.normal(size=shape, loc=1024, scale=64)
     u_prev = np.random.normal(size=shape, loc=1024, scale=64)
+    return u, u_prev
+
+
+def init_centered_wave(shape):
+    """Creates a gaussian wave field."""
+    N, M = simulation_params['shape']
+    dx = simulation_params['dx']
+    dy = dx
+    x = np.arange(0, N) * dx
+    y = np.arange(0, M) * dy
+    X, Y = np.meshgrid(x, y, indexing='ij') # indexing='ij' is used to keep the N, M aspect
+
+    source_loc = x.mean(), y.mean()
+    u = np.exp(-((X - source_loc[0]) ** 2 + (Y - source_loc[1]) ** 2) * 50.)
+    u_prev = np.zeros_like(u)
     return u, u_prev
 
 
@@ -40,7 +55,8 @@ view.addItem(img)
 view.setRange(QtCore.QRectF(0, 0, simulation_params['shape'][0], simulation_params['shape'][1]))  # set initial view
 
 # Create starting wave
-u, u_prev = init_wave_randomly(simulation_params['shape'])
+# u, u_prev = init_wave_randomly(simulation_params['shape'])
+u, u_prev = init_centered_wave(simulation_params['shape'])
 
 # init image
 img.setImage(u)
