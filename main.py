@@ -32,7 +32,7 @@ simulation_params = {'c': 1.,
 app = pg.mkQApp("pyqtgraph-wave-equation")
 win = pg.GraphicsLayoutWidget()
 win.show()  # show widget alone in its own window
-win.setWindowTitle('pyqtgraph example: ImageItem')
+win.setWindowTitle('pyqtgraph-wave-equation')
 view = win.addViewBox()
 view.setAspectLocked(True)  # lock the aspect ratio so pixels are always square
 img = pg.ImageItem(border='w')
