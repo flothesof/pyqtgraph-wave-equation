@@ -11,7 +11,7 @@ def wave_equation_fd(u, u_prev, c, dx, dt, nt):
         u_new = np.zeros_like(u)
         for i in range(1, u.shape[0] - 1):
             for j in range(1, u.shape[1] - 1):
-                u_new[i, j] = 2 * u[i, j] - u_prev[i, j] + c ** 2 * dt ** 2 * (
+                u_new[i, j] = 2 * u[i, j] - u_prev[i, j] + c ** 2 * dt ** 2 / dx**2 * (
                         u[i - 1, j] + u[i + 1, j] + u[i, j - 1] + u[i, j + 1] - 4 * u[i, j])
         u, u_prev = u_new, u
     return u, u_prev
@@ -26,7 +26,7 @@ def init_wave_randomly(shape):
 
 simulation_params = {'c': 1.,
                      'dx': 0.1,
-                     'dt': 0.2,
+                     'dt': 0.01,
                      'shape': (600, 300)}
 
 app = pg.mkQApp("pyqtgraph-wave-equation")
