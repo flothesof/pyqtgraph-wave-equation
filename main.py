@@ -66,19 +66,22 @@ def init_plane_wave(shape, k, point_x0, n_wavelengths=1, maxdist=5., decay=10.):
         """Envelope orthognal to propagation direction, smoothed exponentially around the edges."""
         nnx, nny = -ny, nx
         dist = np.abs(nnx * (X - x0) + nny * (Y - y0))
-        dist[dist >= maxdist] *= np.exp(- (dist[dist >= maxdist] - maxdist) * decay)
-        return dist
+        env = np.ones_like(dist)
+        env[dist >= maxdist] *= np.exp(- (dist[dist >= maxdist] - maxdist) * decay)
+        return env
 
     def make_envelope4(x0, y0):
         """Envelope along propagation direction, as a number of wavelengths."""
-        return np.abs(kx * (X - x0) + ky * (Y - y0)) <= np.pi * n_wavelengths
+        dist = np.abs(kx * (X - x0) + ky * (Y - y0))
+        env = np.ones_like(dist)
+        env[dist >= np.pi * n_wavelengths] *= np.exp(
+            - (dist[dist >= np.pi * n_wavelengths] - np.pi * n_wavelengths) * decay)
+        return env
 
-    # phase0 = kx * (X - x0) # 1d version
-    phase0 = kx * (X - x0) + ky * (Y - y0)
+    phase0 = kx * (X - x0) + ky * (Y - y0) - np.pi / 2
     u0 = np.cos(phase0) * make_envelope3(x0, y0) * make_envelope4(x0, y0)
     x1, y1 = x0 + celerity * dt * nx, y0 + celerity * dt * ny
-    phase1 = kx * (X - x1) + ky * (Y - y1)
-    u1 = np.cos(phase1) * make_envelope3(x1, y1) * make_envelope4(x1, y1)
+    u1 = np.cos(phase0 - omega * dt) * make_envelope3(x1, y1) * make_envelope4(x1, y1)
     return u1, u0
 
 
@@ -100,13 +103,14 @@ view.setRange(QtCore.QRectF(0, 0, simulation_params['shape'][0], simulation_para
 # Create starting wave
 # u, u_prev = init_wave_randomly(simulation_params['shape'])
 # u, u_prev = init_centered_wave(simulation_params['shape'])
-u, u_prev = init_plane_wave(simulation_params['shape'], [1.5, 0.], [30., 15.], n_wavelengths=1, maxdist=10., decay=10.)
+# u, u_prev = init_plane_wave(simulation_params['shape'], [1.5, 0.], [30., 15.], n_wavelengths=1, maxdist=10., decay=15.)
 # u, u_prev = init_plane_wave(simulation_params['shape'], [0., 1.5], [30., 15.], n_wavelengths=2)
 
-# theta = np.deg2rad(-30.)
-# cos, sin = np.cos(theta), np.sin(theta)
-# r = np.array([[cos, -sin], [sin, cos]])
-# u, u_prev = init_plane_wave(simulation_params['shape'], np.dot(r, [0., 1.5]), [30., 15.], n_wavelengths=2)
+# rotated plane wave case
+theta = np.deg2rad(-30.)
+cos, sin = np.cos(theta), np.sin(theta)
+r = np.array([[cos, -sin], [sin, cos]])
+u, u_prev = init_plane_wave(simulation_params['shape'], np.dot(r, [0., 2.5]), [30., 15.], n_wavelengths=5)
 
 X, Y = _make_grid()
 print(X.max(), Y.max())
