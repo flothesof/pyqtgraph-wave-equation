@@ -39,8 +39,8 @@ def init_centered_wave(shape):
     """Creates a gaussian wave field."""
     X, Y = _make_grid()
     source_loc = X.mean(), Y.mean()
-    u = np.exp(-((X - source_loc[0]) ** 2 + (Y - source_loc[1]) ** 2) * 50.)
-    u_prev = u * 2
+    u = np.exp(-((X - source_loc[0]) ** 2 + (Y - source_loc[1]) ** 2) * 5.)
+    u_prev = u * 0.
     return u, u_prev
 
 
@@ -102,15 +102,15 @@ view.setRange(QtCore.QRectF(0, 0, simulation_params['shape'][0], simulation_para
 
 # Create starting wave
 # u, u_prev = init_wave_randomly(simulation_params['shape'])
-# u, u_prev = init_centered_wave(simulation_params['shape'])
+u, u_prev = init_centered_wave(simulation_params['shape'])
 # u, u_prev = init_plane_wave(simulation_params['shape'], [1.5, 0.], [30., 15.], n_wavelengths=1, maxdist=10., decay=15.)
 # u, u_prev = init_plane_wave(simulation_params['shape'], [0., 1.5], [30., 15.], n_wavelengths=2)
 
 # rotated plane wave case
-theta = np.deg2rad(-30.)
-cos, sin = np.cos(theta), np.sin(theta)
-r = np.array([[cos, -sin], [sin, cos]])
-u, u_prev = init_plane_wave(simulation_params['shape'], np.dot(r, [0., 2.5]), [30., 15.], n_wavelengths=5)
+# theta = np.deg2rad(-30.)
+# cos, sin = np.cos(theta), np.sin(theta)
+# r = np.array([[cos, -sin], [sin, cos]])
+# u, u_prev = init_plane_wave(simulation_params['shape'], np.dot(r, [0., 2.5]), [30., 15.], n_wavelengths=5)
 
 X, Y = _make_grid()
 print(X.max(), Y.max())
