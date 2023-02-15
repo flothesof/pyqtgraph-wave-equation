@@ -31,11 +31,11 @@ def init_centered_wave(shape):
     dy = dx
     x = np.arange(0, N) * dx
     y = np.arange(0, M) * dy
-    X, Y = np.meshgrid(x, y, indexing='ij') # indexing='ij' is used to keep the N, M aspect
+    X, Y = np.meshgrid(x, y, indexing='ij')  # indexing='ij' is used to keep the N, M aspect
 
     source_loc = x.mean(), y.mean()
     u = np.exp(-((X - source_loc[0]) ** 2 + (Y - source_loc[1]) ** 2) * 50.)
-    u_prev = np.zeros_like(u)
+    u_prev = u * 2
     return u, u_prev
 
 
@@ -50,7 +50,7 @@ win.show()  # show widget alone in its own window
 win.setWindowTitle('pyqtgraph-wave-equation')
 view = win.addViewBox()
 view.setAspectLocked(True)  # lock the aspect ratio so pixels are always square
-img = pg.ImageItem(border='w')
+img = pg.ImageItem(border='w', colorMap=pg.colormap.get('seismic', source='matplotlib'))
 view.addItem(img)
 view.setRange(QtCore.QRectF(0, 0, simulation_params['shape'][0], simulation_params['shape'][1]))  # set initial view
 
@@ -60,6 +60,7 @@ u, u_prev = init_centered_wave(simulation_params['shape'])
 
 # init image
 img.setImage(u)
+img.setLevels((-1, 1))
 
 elapsed = 0
 timer = QtCore.QTimer()
@@ -76,10 +77,11 @@ def updateData():
     img.setImage(u, autoLevels=False)
     timer.start(1)
     elapsed += 1
-    # refresh contrast periodically
+    # refresh contrast periodically, in a symmetric way
     if elapsed % 1000 == 0:
         mini, maxi = u.min(), u.max()
-        img.setLevels((mini, maxi))
+        abs_max = max(abs(mini), abs(maxi))
+        img.setLevels((-abs_max, abs_max))
 
 
 timer.timeout.connect(updateData)
