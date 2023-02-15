@@ -19,30 +19,73 @@ def wave_equation_fd(u, u_prev, c, dx, dt, nt):
 
 def init_wave_randomly(shape):
     """Creates two random wave fields."""
-    u = np.random.normal(size=shape, loc=1024, scale=64)
-    u_prev = np.random.normal(size=shape, loc=1024, scale=64)
+    u = np.random.normal(size=shape, loc=0., scale=0.05)
+    u_prev = np.random.normal(size=shape, loc=0., scale=0.05)
     return u, u_prev
 
 
-def init_centered_wave(shape):
-    """Creates a gaussian wave field."""
+def _make_grid():
+    """Creates X, Y simulation grid defined by sim parameters."""
     N, M = simulation_params['shape']
     dx = simulation_params['dx']
     dy = dx
     x = np.arange(0, N) * dx
     y = np.arange(0, M) * dy
     X, Y = np.meshgrid(x, y, indexing='ij')  # indexing='ij' is used to keep the N, M aspect
+    return X, Y
 
-    source_loc = x.mean(), y.mean()
+
+def init_centered_wave(shape):
+    """Creates a gaussian wave field."""
+    X, Y = _make_grid()
+    source_loc = X.mean(), Y.mean()
     u = np.exp(-((X - source_loc[0]) ** 2 + (Y - source_loc[1]) ** 2) * 50.)
     u_prev = u * 2
     return u, u_prev
 
 
+def init_plane_wave(shape, k, point_x0, n_wavelengths=1, maxdist=5., decay=10.):
+    """Inits a plane wave defined by wave vector k and point x0.
+
+    u(x, t) = exp(1j * (k * (x - x0) - ωt)) * envelope(x - x0, λ)
+    """
+    X, Y = _make_grid()
+    celerity = simulation_params['c']
+    dx = simulation_params['dx']
+    dt = simulation_params['dt']
+
+    kx, ky = k
+    x0, y0 = point_x0
+
+    magnitude_k = np.sqrt(kx ** 2 + ky ** 2)
+    omega = magnitude_k * celerity
+    wavelength = 2 * np.pi / magnitude_k
+    nx, ny = kx / magnitude_k, ky / magnitude_k  # unit vector
+
+    def make_envelope3(x0, y0):
+        """Envelope orthognal to propagation direction, smoothed exponentially around the edges."""
+        nnx, nny = -ny, nx
+        dist = np.abs(nnx * (X - x0) + nny * (Y - y0))
+        dist[dist >= maxdist] *= np.exp(- (dist[dist >= maxdist] - maxdist) * decay)
+        return dist
+
+    def make_envelope4(x0, y0):
+        """Envelope along propagation direction, as a number of wavelengths."""
+        return np.abs(kx * (X - x0) + ky * (Y - y0)) <= np.pi * n_wavelengths
+
+    # phase0 = kx * (X - x0) # 1d version
+    phase0 = kx * (X - x0) + ky * (Y - y0)
+    u0 = np.cos(phase0) * make_envelope3(x0, y0) * make_envelope4(x0, y0)
+    x1, y1 = x0 + celerity * dt * nx, y0 + celerity * dt * ny
+    phase1 = kx * (X - x1) + ky * (Y - y1)
+    u1 = np.cos(phase1) * make_envelope3(x1, y1) * make_envelope4(x1, y1)
+    return u1, u0
+
+
 simulation_params = {'c': 1.,
                      'dx': 0.1,
                      'dt': 0.01,
-                     'shape': (600, 300)}
+                     'shape': (601, 301)}
 
 app = pg.mkQApp("pyqtgraph-wave-equation")
 win = pg.GraphicsLayoutWidget()
@@ -56,7 +99,17 @@ view.setRange(QtCore.QRectF(0, 0, simulation_params['shape'][0], simulation_para
 
 # Create starting wave
 # u, u_prev = init_wave_randomly(simulation_params['shape'])
-u, u_prev = init_centered_wave(simulation_params['shape'])
+# u, u_prev = init_centered_wave(simulation_params['shape'])
+u, u_prev = init_plane_wave(simulation_params['shape'], [1.5, 0.], [30., 15.], n_wavelengths=1, maxdist=10., decay=10.)
+# u, u_prev = init_plane_wave(simulation_params['shape'], [0., 1.5], [30., 15.], n_wavelengths=2)
+
+# theta = np.deg2rad(-30.)
+# cos, sin = np.cos(theta), np.sin(theta)
+# r = np.array([[cos, -sin], [sin, cos]])
+# u, u_prev = init_plane_wave(simulation_params['shape'], np.dot(r, [0., 1.5]), [30., 15.], n_wavelengths=2)
+
+X, Y = _make_grid()
+print(X.max(), Y.max())
 
 # init image
 img.setImage(u)
